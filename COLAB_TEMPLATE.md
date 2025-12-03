@@ -1,4 +1,4 @@
-# Secure Mail Triage — Colab notebook scaffold
+# Secure Mail Triage — Colab notebook
 
 This template mirrors the agentic workflow described in the README. Copy the cells into a new Colab notebook and run them sequentially. Keep the sample data inline to avoid external dependencies.
 
@@ -183,7 +183,6 @@ print(f"Accuracy on sample set: {correct}/{len(sample_emails)}")
 print(json.dumps(results, indent=2))
 ```
 
-## 8) Notes for submission
+## 8) Notes
 - Keep the dataset inline as above.
 - If you want to avoid OpenAI usage, you can swap `ChatOpenAI` with a local or open-weight model (e.g., `langchain.llms.LlamaCpp` or Hugging Face TGI) while keeping the same prompts and chain wiring.
-- Share the notebook with `francis.elhelou@gmail.com` before submission.
