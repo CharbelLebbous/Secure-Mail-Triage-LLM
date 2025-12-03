@@ -32,7 +32,7 @@ Phishing emails remain a top initial access vector. Manual review is slow and in
 
 ### Configuration notes
 - Keep all sample emails and reputation hints inline as Python variables so the notebook has no external data dependencies.
-- Prefer lightweight local or API LLMs already accessible in Colab (e.g., `gpt-3.5-turbo` or open-source instruct models) with simple LangChain tools.
+- Prefer lightweight local or API LLMs already accessible in Colab (e.g., `gpt-4o-mini` or open-source instruct models) with simple LangChain tools.
 - Use deterministic parsing functions (regex/standard library) to keep preprocessing reliable.
 
 ### Next implementation steps (for the Colab)
@@ -40,15 +40,16 @@ Phishing emails remain a top initial access vector. Manual review is slow and in
 - Implement the agents with LangChain chains or tools, plus simple rule-based helpers for URL/domain extraction.
 - Add an evaluation cell that runs a few sample emails through the pipeline and prints the classification, explanation, and action.
 
-## Colab notebook scaffold (Cohere free tier)
-Use `COLAB_TEMPLATE.md` as a cell-by-cell guide to build the notebook quickly with Cohere’s free-tier API:
+## Colab notebook scaffold (OpenAI API)
+Use `COLAB_TEMPLATE.md` as a cell-by-cell guide to build the notebook quickly with the OpenAI API:
 - Inline dataset and reputation hints (no external downloads)
 - Helper functions for normalization and URL/domain extraction
 - Prompts for classification, explanation, and action recommendation
-- LangChain chains wired to a Cohere chat model you can access (default `command-r-plus`)
+- LangChain chains wired to an OpenAI chat model you can access (default `gpt-4o-mini`)
 - Evaluation cells to print results and a quick accuracy check
 
-**Notes for Cohere setup**
-- Create a free Cohere account and obtain an API key (the ChatGPT Plus subscription does **not** include this key).
-- Keep prompts concise to fit free-tier limits; set `temperature=0` for consistent outputs.
-- If you encounter a `NotFoundError` saying a model was removed (e.g., `command-r`), switch the `COHERE_MODEL` variable in the template to a currently supported Cohere chat model for your tier (check Cohere’s docs/dashboard).
+**Notes for OpenAI setup**
+- The ChatGPT Plus web subscription does **not** include API credits; you need an OpenAI API key with quota.
+- In Colab, set `OPENAI_API_KEY` (e.g., via `os.environ["OPENAI_API_KEY"] = "..."`).
+- Keep prompts concise to control token usage; set `temperature=0` for consistency.
+- If you use a different OpenAI model (e.g., `gpt-3.5-turbo` or `gpt-4o`), update the `OPENAI_MODEL` variable in the template.

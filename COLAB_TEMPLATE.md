@@ -2,17 +2,16 @@
 
 This template mirrors the agentic workflow described in the README. Copy the cells into a new Colab notebook and run them sequentially. Keep the sample data inline to avoid external dependencies.
 
-## 1) Setup (Cohere free tier)
+## 1) Setup (OpenAI API)
 ```python
-!pip install -q langchain langchain-cohere langchain-community cohere
+!pip install -q langchain langchain-openai langchain-community openai
 
 import os
-# Store your Cohere key in Colab secrets for safety, or paste temporarily while testing.
-os.environ["COHERE_API_KEY"] = "<YOUR_COHERE_KEY>"
+# Store your OpenAI key in Colab secrets for safety, or paste temporarily while testing.
+os.environ["OPENAI_API_KEY"] = "<YOUR_OPENAI_KEY>"
 
-# Pick any Cohere chat model available to your account. If you see a 404/NotFoundError
-# about a removed model, switch this name to a supported one from Cohere docs/dashboard.
-COHERE_MODEL = "command-r-plus"
+# Pick any OpenAI chat model available to your account.
+OPENAI_MODEL = "gpt-4o-mini"
 ```
 
 ## 2) Sample inline dataset
@@ -77,14 +76,14 @@ def normalize_email(subject: str, body: str):
     return {"text": text, "urls": urls, "domains": domains}
 ```
 
-## 4) Prompts and LangChain setup (Cohere)
+## 4) Prompts and LangChain setup (OpenAI)
 ```python
-from langchain_cohere import ChatCohere
+from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
-# Use a free-tier Cohere chat model available to your account (e.g., "command-r-plus").
-llm = ChatCohere(model=COHERE_MODEL, temperature=0)
+# Use an OpenAI chat model available to your account (default "gpt-4o-mini").
+llm = ChatOpenAI(model=OPENAI_MODEL, temperature=0)
 
 classification_prompt = ChatPromptTemplate.from_template(
     """
@@ -186,5 +185,5 @@ print(json.dumps(results, indent=2))
 
 ## 8) Notes for submission
 - Keep the dataset inline as above.
-- If Cohere free-tier limits are tight, you can swap `ChatCohere` with a local or open-weight model (e.g., `langchain.llms.LlamaCpp` or Hugging Face TGI) while keeping the same prompts and chain wiring.
+- If you want to avoid OpenAI usage, you can swap `ChatOpenAI` with a local or open-weight model (e.g., `langchain.llms.LlamaCpp` or Hugging Face TGI) while keeping the same prompts and chain wiring.
 - Share the notebook with `francis.elhelou@gmail.com` before submission.
