@@ -2,12 +2,13 @@
 
 This template mirrors the agentic workflow described in the README. Copy the cells into a new Colab notebook and run them sequentially. Keep the sample data inline to avoid external dependencies.
 
-## 1) Setup
+## 1) Setup (Cohere free tier)
 ```python
-!pip install -q langchain langchain-openai langchain-community tiktoken
+!pip install -q langchain langchain-cohere langchain-community cohere
 
 import os
-os.environ["OPENAI_API_KEY"] = "<YOUR_KEY>"  # or use a runtime secret
+# Store your Cohere key in Colab secrets for safety, or paste temporarily while testing.
+os.environ["COHERE_API_KEY"] = "<YOUR_COHERE_KEY>"
 ```
 
 ## 2) Sample inline dataset
@@ -72,13 +73,14 @@ def normalize_email(subject: str, body: str):
     return {"text": text, "urls": urls, "domains": domains}
 ```
 
-## 4) Prompts and LangChain setup
+## 4) Prompts and LangChain setup (Cohere)
 ```python
-from langchain_openai import ChatOpenAI
+from langchain_cohere import ChatCohere
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.schema import StrOutputParser
 
-llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+# Use a free-tier Cohere chat model available to your account (e.g., "command-r").
+llm = ChatCohere(model="command-r", temperature=0)
 
 classification_prompt = ChatPromptTemplate.from_template(
     """
@@ -180,6 +182,5 @@ print(json.dumps(results, indent=2))
 
 ## 8) Notes for submission
 - Keep the dataset inline as above.
-- If you need to avoid external APIs, swap `ChatOpenAI` with a local model accessible in Colab (e.g., `gpt4all` or `ollama` if available). Keep the same prompts and chain wiring.
+- If Cohere free-tier limits are tight, you can swap `ChatCohere` with a local or open-weight model (e.g., `langchain.llms.LlamaCpp` or Hugging Face TGI) while keeping the same prompts and chain wiring.
 - Share the notebook with `francis.elhelou@gmail.com` before submission.
-```
