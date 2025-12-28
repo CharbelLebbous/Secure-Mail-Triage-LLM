@@ -1,1 +1,1 @@
-"""Secure Mail Triage agents and pipeline components."""
+"""Secure Mail Triage agents and pipeline components."""  # Package docstring summarizing contents.
