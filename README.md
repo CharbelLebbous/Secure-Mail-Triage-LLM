@@ -114,6 +114,5 @@ Screenshots:
 - Consent & user control: The system is run only on accounts with explicit user authorization; results storage can be disabled.
 - Transparency & explainability: Outputs include a risk score and a rationale list; agent outputs are stored for audit when enabled.
 - Human oversight: The tool provides triage suggestions; final decisions remain with a human reviewer.
-- Bias & fairness: Prompts and thresholds can be tuned; evaluation on a small labeled set is recommended to track false positives/negatives.
 - Robustness & prompt injection: System prompts explicitly treat email text as untrusted and ignore instructions inside it.
 - Security: API keys are read from environment variables; OAuth tokens are stored locally and ignored by Git.
