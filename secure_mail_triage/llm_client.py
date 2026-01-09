@@ -73,6 +73,7 @@ class LLMClient:
         system_prompt: str,
         user_prompt: str,
         max_tokens: int = 500,
+        temperature: Optional[float] = None,
     ) -> LLMResult:
         request_kwargs = {
             "model": self.model,
@@ -80,7 +81,7 @@ class LLMClient:
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
             ],
-            "temperature": self.temperature,
+            "temperature": self.temperature if temperature is None else temperature,
             "max_tokens": max_tokens,
         }
         if self.use_json_mode:

@@ -1,7 +1,7 @@
 """Command-line interface for Secure Mail Triage.
 
 Usage notes:
-- CLI is LLM-only; rule-based pipeline remains available for manual use in code.
+- CLI is LLM-only.
 """
 from __future__ import annotations
 

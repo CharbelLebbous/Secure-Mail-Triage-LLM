@@ -1,8 +1,8 @@
 """Gmail ingestion helpers using the Gmail API.
 
 Usage notes:
-- Used by the CLI gmail subcommand.
-- Not used by the Streamlit UI (which accepts manual input).
+- Used by both the CLI and the Streamlit UI for Gmail ingestion.
+- Attachments are not analyzed; only a count is recorded.
 """
 from __future__ import annotations
 
@@ -76,26 +76,14 @@ def _extract_body(message) -> str:
         return payload.decode("utf-8", errors="replace").strip()
 
 
-def _extract_attachments(message) -> List[Dict[str, str]]:
-    attachments: List[Dict[str, str]] = []
+def _count_attachments(message) -> int:
+    count = 0
     for part in message.walk():
         filename = part.get_filename()
         content_disposition = part.get_content_disposition()
-        if not filename and content_disposition != "attachment":
-            continue
-        decoded_name = _decode_header_value(filename or "")
-        encrypted = False
-        if decoded_name:
-            lower = decoded_name.lower()
-            encrypted = "encrypted" in lower or lower.endswith((".zip", ".7z", ".rar"))
-        attachments.append(
-            {
-                "name": decoded_name,
-                "content_type": part.get_content_type(),
-                "encrypted": encrypted,
-            }
-        )
-    return attachments
+        if filename or content_disposition == "attachment":
+            count += 1
+    return count
 
 
 def get_gmail_service(
@@ -157,14 +145,15 @@ def parse_gmail_message(raw_bytes: bytes) -> Tuple[Email, Optional[str]]:
     bcc_list = [addr for _, addr in getaddresses(message.get_all("bcc", []))]
     recipients = [addr for addr in (to_list + cc_list + bcc_list) if addr]
     body = _extract_body(message)
-    attachments = _extract_attachments(message)
+    attachment_count = _count_attachments(message)
     email = Email(
         subject=subject,
         body=body,
         sender=sender,
         recipients=recipients,
         headers=headers,
-        attachments=attachments,
+        attachments=[],
+        attachment_count=attachment_count,
     )
     received_at = None
     if message.get("date"):
