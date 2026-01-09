@@ -49,6 +49,7 @@ def _extract_body(message) -> str:
             content_disposition = part.get_content_disposition()
             if content_disposition == "attachment":
                 continue
+            # Decode each text part safely, falling back to utf-8 if needed.
             payload = part.get_payload(decode=True)
             if not payload:
                 continue
@@ -64,6 +65,7 @@ def _extract_body(message) -> str:
         if plain_parts:
             return "\n".join(plain_parts).strip()
         if html_parts:
+            # Only use HTML if no plain text part is present.
             return _strip_html("\n".join(html_parts)).strip()
         return ""
     payload = message.get_payload(decode=True)
@@ -97,8 +99,10 @@ def get_gmail_service(
         creds = Credentials.from_authorized_user_file(token_path, scopes)
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
+            # Refresh without re-prompting if we have a refresh token.
             creds.refresh(Request())
         else:
+            # First-time auth flow writes token.json locally.
             flow = InstalledAppFlow.from_client_secrets_file(credentials_path, scopes)
             creds = flow.run_local_server(port=0)
         with open(token_path, "w", encoding="utf-8") as handle:
@@ -110,6 +114,7 @@ def list_message_ids(service, user_id: str = "me", query: Optional[str] = None, 
     messages: List[Dict[str, str]] = []
     page_token = None
     while len(messages) < max_results:
+        # Gmail API uses pagination; keep pulling until we hit max_results.
         response = (
             service.users()
             .messages()

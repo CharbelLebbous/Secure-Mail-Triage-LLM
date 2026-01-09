@@ -36,6 +36,7 @@ def _extract_json_object(text: str) -> Tuple[Optional[Dict[str, Any]], Optional[
             return parsed, None
         return None, "response is not a JSON object"
     except json.JSONDecodeError:
+        # Recover when the model wraps JSON with extra text.
         start = stripped.find("{")
         end = stripped.rfind("}")
         if start == -1 or end == -1 or end <= start:
@@ -85,10 +86,12 @@ class LLMClient:
             "max_tokens": max_tokens,
         }
         if self.use_json_mode:
+            # JSON mode keeps outputs machine-readable and reduces parse noise.
             request_kwargs["response_format"] = {"type": "json_object"}
         try:
             response = self.client.chat.completions.create(**request_kwargs)
         except Exception:
+            # Some models do not support response_format; retry without it.
             if "response_format" in request_kwargs:
                 request_kwargs.pop("response_format", None)
                 response = self.client.chat.completions.create(**request_kwargs)

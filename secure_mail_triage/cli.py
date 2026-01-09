@@ -21,6 +21,7 @@ def _build_pipeline(model: Optional[str] = None):
 
 
 def _print_result(subject: str, classification, warnings):
+    # Keep terminal output consistent for demos and logs.
     print(f"=== {subject} ===")
     print(
         json.dumps(
@@ -48,6 +49,7 @@ def _handle_text(args) -> None:
     classification, details = pipeline.run_with_details(email)
     _print_result(email.subject, classification, classification.warnings)
     if not args.no_store and args.db:
+        # Store results only when explicitly enabled.
         save_result(
             db_path=args.db,
             source="text",
@@ -72,6 +74,7 @@ def _handle_gmail(args) -> None:
         _print_result(email.subject or "(no subject)", classification, classification.warnings)
         internal_date = meta.get("internal_date")
         if internal_date and not received_at:
+            # Fallback to Gmail's internal timestamp if the Date header is missing.
             try:
                 received_at = datetime.fromtimestamp(int(internal_date) / 1000, tz=timezone.utc).isoformat()
             except (TypeError, ValueError):

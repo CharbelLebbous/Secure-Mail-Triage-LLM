@@ -37,6 +37,7 @@ CATEGORY_QUERY_MAP = {
 
 
 def _build_pipeline():
+    # Central place to set model defaults for the UI.
     return create_llm_pipeline(model=FIXED_MODEL)
 
 
@@ -70,6 +71,7 @@ def _build_gmail_query(category: str, query: str) -> str:
 
 
 def _load_gmail_messages(credentials_path, token_path, query, max_results):
+    # Fetch raw Gmail messages and convert them into Email objects.
     service = get_gmail_service(credentials_path, token_path)
     messages = list_message_ids(service, query=query, max_results=max_results)
     items = []
@@ -91,6 +93,7 @@ def main() -> None:
     st.set_page_config(page_title="Secure Mail Triage", page_icon=":shield:")
     st.title("Secure Mail Triage")
 
+    # Streamlit session state holds the loaded Gmail cache and recent results.
     if "gmail_messages" not in st.session_state:
         st.session_state.gmail_messages = []
     if "gmail_results" not in st.session_state:

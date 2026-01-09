@@ -12,6 +12,7 @@ from .agents import AgentResult, Email, LinkSafetyAgent
 from .llm_client import LLMClient, WRAPPED_JSON_WARNING
 
 
+# Normalization helpers keep LLM outputs within expected ranges.
 def _as_int(value: Any, default: int = 0, min_value: Optional[int] = None, max_value: Optional[int] = None) -> int:
     try:
         parsed = int(value)
@@ -266,6 +267,7 @@ class LLMClassificationPipeline:
         )
 
     def run_with_details(self, email: Email) -> tuple[AgentResult, Dict[str, AgentResult]]:
+        # Run each agent and keep the individual outputs for auditing.
         structure = self.structure_agent.run(email)
         tone = self.tone_agent.run(structure.features["normalized_body"])
         content = self.content_agent.run(structure.features["normalized_body"])
@@ -277,7 +279,9 @@ class LLMClassificationPipeline:
             domains=structure.features.get("domains", []),
             recipients=email.recipients,
         )
+        # The aggregator is the only place that outputs a risk score + verdict.
         classification = self.aggregator.run(structure, tone, content, safety, context)
+        # Surface all agent warnings to the caller for transparency.
         classification.warnings.extend(structure.warnings)
         classification.warnings.extend(tone.warnings)
         classification.warnings.extend(content.warnings)

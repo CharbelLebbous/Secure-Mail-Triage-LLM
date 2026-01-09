@@ -21,6 +21,7 @@ def create_llm_pipeline(
     from .llm_client import LLMClient
     from .llm_agents import LLMClassificationPipeline
 
+    # Use environment defaults unless explicitly overridden by the caller.
     client = LLMClient(api_key=api_key, model=model)
     return LLMClassificationPipeline(
         client=client,

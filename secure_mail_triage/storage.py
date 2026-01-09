@@ -20,6 +20,7 @@ def _agent_result_to_dict(result: AgentResult) -> Dict[str, Any]:
 def init_db(db_path: str) -> None:
     conn = sqlite3.connect(db_path)
     try:
+        # Create schema once; safe to call on every write.
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS email_results (
@@ -59,6 +60,7 @@ def save_result(
     received_at: Optional[str] = None,
 ) -> None:
     init_db(db_path)
+    # Persist the full agent outputs for later review and audit.
     agent_outputs = {name: _agent_result_to_dict(result) for name, result in details.items()}
     conn = sqlite3.connect(db_path)
     try:
@@ -117,6 +119,7 @@ def fetch_recent_results(db_path: str, limit: int = 50) -> List[Dict[str, Any]]:
         results: List[Dict[str, Any]] = []
         for row in rows:
             item = dict(row)
+            # Convert JSON fields back into Python values for display.
             for field in ("recipients", "rationale", "warnings"):
                 if item.get(field):
                     try:
