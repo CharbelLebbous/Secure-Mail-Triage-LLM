@@ -14,6 +14,9 @@ from email.utils import parseaddr
 from typing import Optional
 
 import streamlit as st
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import Flow
 
 if __package__ is None:  # Allow running via `streamlit run secure_mail_triage/ui_app.py`.
     repo_root = os.path.dirname(os.path.dirname(__file__))
@@ -21,6 +24,8 @@ if __package__ is None:  # Allow running via `streamlit run secure_mail_triage/u
 
 from secure_mail_triage.agents import Email
 from secure_mail_triage.gmail_client import (
+    DEFAULT_SCOPES,
+    build_gmail_service,
     fetch_message_raw,
     get_gmail_service,
     get_profile_email,
@@ -163,6 +168,70 @@ def _build_gmail_query(category: str, query: str) -> str:
     return " ".join(parts).strip()
 
 
+def _get_query_param(name: str) -> str:
+    if hasattr(st, "query_params"):
+        value = st.query_params.get(name, "")
+    else:
+        value = st.experimental_get_query_params().get(name, "")
+    if isinstance(value, list):
+        return value[0] if value else ""
+    return value or ""
+
+
+def _clear_query_params() -> None:
+    if hasattr(st, "query_params"):
+        st.query_params.clear()
+    else:
+        st.experimental_set_query_params()
+
+
+def _get_web_oauth_config() -> Optional[dict]:
+    try:
+        client_id = st.secrets.get("GOOGLE_CLIENT_ID", "")
+        client_secret = st.secrets.get("GOOGLE_CLIENT_SECRET", "")
+        redirect_uri = st.secrets.get("GOOGLE_REDIRECT_URI", "")
+    except Exception:
+        client_id = os.getenv("GOOGLE_CLIENT_ID", "")
+        client_secret = os.getenv("GOOGLE_CLIENT_SECRET", "")
+        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "")
+    if client_id and client_secret and redirect_uri:
+        return {
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "redirect_uri": redirect_uri,
+        }
+    return None
+
+
+def _load_credentials(token_path: str, scopes: list[str]) -> Optional[Credentials]:
+    if not os.path.exists(token_path):
+        return None
+    creds = Credentials.from_authorized_user_file(token_path, scopes)
+    if creds and creds.expired and creds.refresh_token:
+        creds.refresh(Request())
+        _save_credentials(token_path, creds)
+    return creds
+
+
+def _save_credentials(token_path: str, creds: Credentials) -> None:
+    with open(token_path, "w", encoding="utf-8") as handle:
+        handle.write(creds.to_json())
+
+
+def _build_web_flow(web_config: dict) -> Flow:
+    client_config = {
+        "web": {
+            "client_id": web_config["client_id"],
+            "client_secret": web_config["client_secret"],
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+        }
+    }
+    flow = Flow.from_client_config(client_config, scopes=DEFAULT_SCOPES)
+    flow.redirect_uri = web_config["redirect_uri"]
+    return flow
+
+
 def _resolve_db_path(user_email: Optional[str]) -> str:
     base_dir = os.path.join(os.getcwd(), "data")
     os.makedirs(base_dir, exist_ok=True)
@@ -174,7 +243,14 @@ def _resolve_db_path(user_email: Optional[str]) -> str:
 
 def _load_gmail_messages(credentials_path, token_path, query, max_results, page_token=None):
     # Fetch raw Gmail messages and convert them into Email objects.
-    service = get_gmail_service(credentials_path, token_path)
+    web_config = _get_web_oauth_config()
+    if web_config:
+        creds = _load_credentials(token_path, DEFAULT_SCOPES)
+        if not creds:
+            raise ValueError("Sign in with Gmail first.")
+        service = build_gmail_service(creds)
+    else:
+        service = get_gmail_service(credentials_path, token_path)
     account_email = get_profile_email(service)
     messages, next_token = list_message_page(
         service, query=query, max_results=max_results, page_token=page_token
@@ -194,9 +270,29 @@ def _load_gmail_messages(credentials_path, token_path, query, max_results, page_
     return items, next_token, account_email
 
 
-def _sign_in_gmail(credentials_path: str, token_path: str) -> str:
-    service = get_gmail_service(credentials_path, token_path)
+def _try_complete_web_auth(web_config: dict) -> Optional[str]:
+    code = _get_query_param("code")
+    if not code:
+        return None
+    flow = _build_web_flow(web_config)
+    flow.fetch_token(code=code)
+    creds = flow.credentials
+    _save_credentials(TOKEN_PATH, creds)
+    _clear_query_params()
+    service = build_gmail_service(creds)
     return get_profile_email(service)
+
+
+def _sign_in_gmail(credentials_path: str, token_path: str) -> str:
+    web_config = _get_web_oauth_config()
+    if not web_config:
+        service = get_gmail_service(credentials_path, token_path)
+        return get_profile_email(service)
+    creds = _load_credentials(token_path, DEFAULT_SCOPES)
+    if creds:
+        service = build_gmail_service(creds)
+        return get_profile_email(service)
+    return ""
 
 
 def _reset_gmail_auth() -> None:
@@ -226,6 +322,16 @@ def main() -> None:
         st.session_state.gmail_user_email = ""
     if "user_db_path" not in st.session_state:
         st.session_state.user_db_path = _resolve_db_path(None)
+    if "oauth_started" not in st.session_state:
+        st.session_state.oauth_started = False
+
+    web_config = _get_web_oauth_config()
+    if web_config and not st.session_state.gmail_user_email:
+        account_email = _try_complete_web_auth(web_config)
+        if account_email:
+            st.session_state.gmail_user_email = account_email
+            st.session_state.user_db_path = _resolve_db_path(account_email)
+            st.session_state.oauth_started = False
 
     with st.sidebar:
         st.header("Settings")
@@ -246,12 +352,27 @@ def main() -> None:
         else:
             st.info("Sign in with Gmail to use per-account storage.")
             if st.button("Sign in with Gmail"):
+                st.session_state.oauth_started = True
+            if web_config and st.session_state.oauth_started:
+                try:
+                    flow = _build_web_flow(web_config)
+                    auth_url, _ = flow.authorization_url(
+                        access_type="offline",
+                        include_granted_scopes="true",
+                        prompt="consent",
+                    )
+                    st.link_button("Continue with Google", auth_url)
+                    st.caption("After approving, you will return here automatically.")
+                except Exception as exc:
+                    st.error(f"Gmail sign-in failed: {exc}")
+            if not web_config and st.session_state.oauth_started:
                 try:
                     with st.spinner("Signing in..."):
                         account_email = _sign_in_gmail(CREDENTIALS_PATH, TOKEN_PATH)
                     st.session_state.gmail_user_email = account_email
                     st.session_state.user_db_path = _resolve_db_path(account_email)
                     st.success(f"Signed in as {account_email}")
+                    st.session_state.oauth_started = False
                 except Exception as exc:
                     st.error(f"Gmail sign-in failed: {exc}")
         db_path = st.text_input(

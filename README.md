@@ -61,6 +61,16 @@ The first run opens a browser for OAuth and writes `.gmail_token.json`.
 
 The UI includes a Gmail-style search bar plus category tabs (All/Primary/Promotions/Social/Updates) and a simple time-range filter. Each sync loads 10 emails; click **Sync more** to load additional pages.
 
+## Deployment (Streamlit Cloud)
+
+1. Deploy the app from GitHub and set the main file to `secure_mail_triage/ui_app.py`.
+2. Create a Google OAuth client of type **Web application**.
+3. Add your Streamlit URL as an authorized redirect URI.
+4. In Streamlit secrets, set:
+   - `GOOGLE_CLIENT_ID`
+   - `GOOGLE_CLIENT_SECRET`
+   - `GOOGLE_REDIRECT_URI` (your Streamlit app URL)
+
 ## Data persistence
 
 Results are stored in SQLite per Gmail account once a user syncs their inbox, keeping each user’s history separate.

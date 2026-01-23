@@ -110,6 +110,11 @@ def get_gmail_service(
     return build("gmail", "v1", credentials=creds)
 
 
+def build_gmail_service(creds):
+    """Build a Gmail API service from existing credentials."""
+    return build("gmail", "v1", credentials=creds)
+
+
 def list_message_ids(service, user_id: str = "me", query: Optional[str] = None, max_results: int = 10):
     messages: List[Dict[str, str]] = []
     page_token = None
