@@ -5,6 +5,7 @@ __pycache__/
 .venv/
 env/
 token.json
+.gmail_token.json
 credentials.json
 *.db
 *.sqlite

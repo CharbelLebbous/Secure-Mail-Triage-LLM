@@ -128,6 +128,23 @@ def list_message_ids(service, user_id: str = "me", query: Optional[str] = None, 
     return messages
 
 
+def list_message_page(
+    service,
+    user_id: str = "me",
+    query: Optional[str] = None,
+    max_results: int = 10,
+    page_token: Optional[str] = None,
+) -> Tuple[List[Dict[str, str]], Optional[str]]:
+    """Fetch a single page of message IDs plus the next page token."""
+    response = (
+        service.users()
+        .messages()
+        .list(userId=user_id, q=query, maxResults=max_results, pageToken=page_token)
+        .execute()
+    )
+    return response.get("messages", []), response.get("nextPageToken")
+
+
 def fetch_message_raw(service, message_id: str, user_id: str = "me") -> Tuple[bytes, Dict[str, str]]:
     message = service.users().messages().get(userId=user_id, id=message_id, format="raw").execute()
     raw_data = message.get("raw", "")
@@ -138,6 +155,12 @@ def fetch_message_raw(service, message_id: str, user_id: str = "me") -> Tuple[by
         "internal_date": message.get("internalDate"),
     }
     return decoded, metadata
+
+
+def get_profile_email(service, user_id: str = "me") -> str:
+    """Return the Gmail account email for the authenticated user."""
+    profile = service.users().getProfile(userId=user_id).execute()
+    return str(profile.get("emailAddress") or "")
 
 
 def parse_gmail_message(raw_bytes: bytes) -> Tuple[Email, Optional[str]]:

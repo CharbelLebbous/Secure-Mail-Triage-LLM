@@ -98,7 +98,7 @@ def main(argv: Optional[list[str]] = None) -> None:
 
     gmail_parser = subparsers.add_parser("gmail", help="Fetch and classify Gmail messages")
     gmail_parser.add_argument("--credentials", default="credentials.json", help="Path to Gmail OAuth credentials")
-    gmail_parser.add_argument("--token", default="token.json", help="Path to store Gmail OAuth token")
+    gmail_parser.add_argument("--token", default=".gmail_token.json", help="Path to store Gmail OAuth token")
     gmail_parser.add_argument("--query", default="newer_than:7d", help="Gmail search query")
     gmail_parser.add_argument("--max-results", type=int, default=5, help="Max messages to fetch")
     gmail_parser.add_argument("--model", default=None, help="OpenAI model override")

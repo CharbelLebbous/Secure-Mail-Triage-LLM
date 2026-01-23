@@ -181,6 +181,14 @@ class UserOrgContextLLMAgent:
             "confidence": _as_float(data.get("confidence"), default=0.5),
         }
         warnings = [str(w) for w in _as_list(data.get("warnings"))]
+        # Remove blocklist warnings unless the sender is actually in the block list.
+        if sender:
+            sender_lower = sender.lower()
+            warnings = [
+                warning
+                for warning in warnings
+                if "blocklist" not in warning.lower() or sender_lower in self.block_senders
+            ]
         if _should_report_parse_error(result.parse_error):
             warnings.append(f"UserOrgContextLLMAgent parse warning: {result.parse_error}")
         return AgentResult(name="user_org_context", features=features, warnings=warnings)

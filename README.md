@@ -29,7 +29,7 @@ The pipeline decomposes classification into small, specialized LLM agents plus a
 
 ### Allow/block lists
 
-Edit `secure_mail_triage/config.py` to add trusted senders/domains (allowlist) or known bad senders (blocklist). The file ships with placeholder `.example` entries; replace them with your real values.
+Edit `secure_mail_triage/config.py` to add trusted senders/domains (allowlist) or known bad senders (blocklist).
 
 ## Setup (ML agentic pipeline + Gmail)
 
@@ -48,35 +48,22 @@ Set your OpenAI key:
 $env:OPENAI_API_KEY="your_key_here"
 ```
 
-The UI uses a fixed model (`gpt-4o-mini`). The CLI can override the model with `--model` if needed.
-
-## ML agentic quickstart (LLM agents)
-
-Classify a single email from text using LLM-backed agents:
-
-```bash
-python -m secure_mail_triage.cli text --subject "Test" --body "Please verify your account"
-```
+The UI uses a fixed model (`gpt-4o-mini`). You can also paste your API key directly into the UI sidebar.
 
 ## Gmail ingestion
 
 1. Create a Google Cloud project and enable the Gmail API.
 2. Create OAuth client credentials (Desktop app) and download `credentials.json`.
 3. Place `credentials.json` in the repo root (or pass `--credentials`).
-4. Run:
+4. Run the UI and click **Sync inbox** in the Gmail tab.
 
-```bash
-python -m secure_mail_triage.cli gmail --query "newer_than:7d" --max-results 5
-```
+The first run opens a browser for OAuth and writes `.gmail_token.json`.
 
-The first run opens a browser for OAuth and writes `token.json`.
-
-You can also use the Gmail tab in the UI to load and select messages for classification. The UI includes a category dropdown (All/Primary/Promotions/Social/Updates) plus an optional query box.
+The UI includes a Gmail-style search bar plus category tabs (All/Primary/Promotions/Social/Updates) and a simple time-range filter. Each sync loads 10 emails; click **Sync more** to load additional pages.
 
 ## Data persistence
 
-Results are stored in SQLite (default `triage.db`) with verdicts, rationale, and agent outputs.
-You can change the location with `--db`.
+Results are stored in SQLite per Gmail account once a user syncs their inbox, keeping each user’s history separate.
 
 ## UI (Streamlit)
 
@@ -86,7 +73,7 @@ Run a lightweight UI for manual triage and viewing recent results:
 streamlit run secure_mail_triage/ui_app.py
 ```
 
-The UI uses the fixed model `gpt-4o-mini` and reads `OPENAI_API_KEY` from the environment.
+The UI uses the fixed model `gpt-4o-mini` and lets users enter their own OpenAI API key in the sidebar. Storage is per Gmail account after sync.
 
 Screenshots:
 
@@ -95,7 +82,8 @@ Screenshots:
 ![Manual Input Tab](docs/ui-manual-input.png)
 ![Recent Results Tab](docs/ui-recent-results.png)
 
-In the Gmail tab, pick a category (or All), optionally add a Gmail query, select one or more emails, and click classify.
+In the Gmail tab, use the search bar and category tabs, select one or more emails, and click classify. Phishing results are hidden by default (not deleted) and can be shown with a toggle.
+The Recent Results tab includes summary metrics, a verdict breakdown chart, and top sender domains.
 
 ## Notes
 
@@ -106,7 +94,7 @@ In the Gmail tab, pick a category (or All), optionally add a Gmail query, select
 
 | Consideration | Implementation level | Why |
 | --- | --- | --- |
-| Transparency & Explainability | High | Verdicts include rationales and structured agent outputs are visible in the UI/CLI. |
+| Transparency & Explainability | High | Verdicts include rationales and structured agent outputs are visible in the UI. |
 | Accountability & Auditability | High | Results and agent outputs can be stored in SQLite for review and tracing. |
 | Robustness & Safety (prompt injection) | Medium | Prompts treat email text as untrusted and JSON mode is enforced. |
 | Privacy & Data Protection | Low | Email content is sent to OpenAI; no private sandbox or redaction layer. |
