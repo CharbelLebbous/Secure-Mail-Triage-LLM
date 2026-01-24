@@ -8,6 +8,7 @@ Usage notes:
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 import sys
 from email.utils import parseaddr
@@ -203,6 +204,21 @@ def _get_web_oauth_config() -> Optional[dict]:
     return None
 
 
+def _get_session_credentials(scopes: list[str]) -> Optional[Credentials]:
+    creds_info = st.session_state.get("gmail_creds_json")
+    if not creds_info:
+        return None
+    creds = Credentials.from_authorized_user_info(creds_info, scopes)
+    if creds and creds.expired and creds.refresh_token:
+        creds.refresh(Request())
+        st.session_state.gmail_creds_json = json.loads(creds.to_json())
+    return creds
+
+
+def _store_session_credentials(creds: Credentials) -> None:
+    st.session_state.gmail_creds_json = json.loads(creds.to_json())
+
+
 def _load_credentials(token_path: str, scopes: list[str]) -> Optional[Credentials]:
     if not os.path.exists(token_path):
         return None
@@ -245,7 +261,7 @@ def _load_gmail_messages(credentials_path, token_path, query, max_results, page_
     # Fetch raw Gmail messages and convert them into Email objects.
     web_config = _get_web_oauth_config()
     if web_config:
-        creds = _load_credentials(token_path, DEFAULT_SCOPES)
+        creds = _get_session_credentials(DEFAULT_SCOPES)
         if not creds:
             raise ValueError("Sign in with Gmail first.")
         service = build_gmail_service(creds)
@@ -277,7 +293,7 @@ def _try_complete_web_auth(web_config: dict) -> Optional[str]:
     flow = _build_web_flow(web_config)
     flow.fetch_token(code=code)
     creds = flow.credentials
-    _save_credentials(TOKEN_PATH, creds)
+    _store_session_credentials(creds)
     _clear_query_params()
     service = build_gmail_service(creds)
     return get_profile_email(service)
@@ -288,7 +304,7 @@ def _sign_in_gmail(credentials_path: str, token_path: str) -> str:
     if not web_config:
         service = get_gmail_service(credentials_path, token_path)
         return get_profile_email(service)
-    creds = _load_credentials(token_path, DEFAULT_SCOPES)
+    creds = _get_session_credentials(DEFAULT_SCOPES)
     if creds:
         service = build_gmail_service(creds)
         return get_profile_email(service)
@@ -300,6 +316,7 @@ def _reset_gmail_auth() -> None:
         os.remove(TOKEN_PATH)
     for key in ("gmail_user_email", "gmail_page_token", "gmail_query", "gmail_synced", "gmail_messages", "gmail_results"):
         st.session_state.pop(key, None)
+    st.session_state.pop("gmail_creds_json", None)
     st.session_state.user_db_path = _resolve_db_path(None)
 
 
@@ -324,6 +341,8 @@ def main() -> None:
         st.session_state.user_db_path = _resolve_db_path(None)
     if "oauth_started" not in st.session_state:
         st.session_state.oauth_started = False
+    if "gmail_creds_json" not in st.session_state:
+        st.session_state.gmail_creds_json = None
 
     web_config = _get_web_oauth_config()
     if web_config and not st.session_state.gmail_user_email:
@@ -359,7 +378,7 @@ def main() -> None:
                     auth_url, _ = flow.authorization_url(
                         access_type="offline",
                         include_granted_scopes="true",
-                        prompt="consent",
+                        prompt="consent select_account",
                     )
                     st.link_button("Continue with Google", auth_url)
                     st.caption("After approving, you will return here automatically.")

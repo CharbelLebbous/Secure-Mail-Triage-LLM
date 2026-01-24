@@ -57,7 +57,7 @@ The UI uses a fixed model (`gpt-4o-mini`). You can also paste your API key direc
 3. Place `credentials.json` in the repo root (or pass `--credentials`).
 4. Run the UI and click **Sync inbox** in the Gmail tab.
 
-The first run opens a browser for OAuth and writes `.gmail_token.json`.
+The first run opens a browser for OAuth and writes `.gmail_token.json` locally. On Streamlit Cloud, OAuth tokens stay in the user session and are not saved to disk.
 
 The UI includes a Gmail-style search bar plus category tabs (All/Primary/Promotions/Social/Updates) and a simple time-range filter. Each sync loads 10 emails; click **Sync more** to load additional pages.
 

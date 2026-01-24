@@ -104,7 +104,7 @@ def get_gmail_service(
         else:
             # First-time auth flow writes token.json locally.
             flow = InstalledAppFlow.from_client_secrets_file(credentials_path, scopes)
-            creds = flow.run_local_server(port=0)
+            creds = flow.run_local_server(port=0, prompt="consent select_account")
         with open(token_path, "w", encoding="utf-8") as handle:
             handle.write(creds.to_json())
     return build("gmail", "v1", credentials=creds)
