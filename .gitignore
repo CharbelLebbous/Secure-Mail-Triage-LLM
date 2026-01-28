@@ -11,3 +11,4 @@ credentials.json
 *.sqlite
 *.sqlite3
 .streamlit/
+deliverables/
