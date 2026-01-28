@@ -2,6 +2,12 @@
 
 LLM agentic workflow for classifying and triaging phishing emails with Gmail ingestion, a UI-first experience, and SQLite audit storage. The pipeline keeps decisions explainable and easy to extend while relying on OpenAI-powered agents.
 
+## Live demo
+
+Access the deployed app here: https://secure-mail-triage-llm.streamlit.app/
+
+Because the Gmail OAuth app is in Testing, only approved test users can sign in. Email me at charbellebbousf@gmail.com to add your Gmail address as a test user.
+
 ## Problem description
 
 Phishing emails remain a top initial access vector. Manual review is slow and inconsistent, which delays response and increases risk. This project implements an LLM agentic workflow that classifies incoming messages as phishing or legitimate using specialized LLM agents and a final aggregation step, with Gmail ingestion and persistent audit logs.
@@ -73,7 +79,15 @@ The UI includes a Gmail-style search bar plus category tabs (All/Primary/Promoti
 
 ## Data persistence
 
-Results are stored in SQLite per Gmail account once a user syncs their inbox, keeping each user’s history separate.
+Results are stored in SQLite per Gmail account once a user syncs their inbox, keeping each user's history separate.
+
+## Data handling & access
+
+- Gmail access uses OAuth; passwords are never stored.
+- Users provide their own OpenAI API key in the UI sidebar (not saved to disk).
+- Email content is sent to the OpenAI API for classification.
+- On Streamlit Cloud, Gmail tokens are stored in session memory per user.
+
 
 ## UI (Streamlit)
 
@@ -87,10 +101,10 @@ The UI uses the fixed model `gpt-4o-mini` and lets users enter their own OpenAI 
 
 Screenshots:
 
-![Gmail Tab](docs/ui-gmail-tab.png)
-![Classification Result](docs/ui-classification-result.png)
+![Gmail Tab](docs/ui-gmail-loaded.png)
+![Classification Result](docs/ui-phishing-detail.png)
 ![Manual Input Tab](docs/ui-manual-input.png)
-![Recent Results Tab](docs/ui-recent-results.png)
+![Recent Results Tab](docs/ui-recent-overview.png)
 
 In the Gmail tab, use the search bar and category tabs, select one or more emails, and click classify. Phishing results are hidden by default (not deleted) and can be shown with a toggle.
 The Recent Results tab includes summary metrics, a verdict breakdown chart, and top sender domains.
@@ -99,6 +113,8 @@ The Recent Results tab includes summary metrics, a verdict breakdown chart, and 
 
 - LLM mode sends email content to the OpenAI API. Use only with permission and avoid sensitive data when required.
 - Attachments are not analyzed or sent to the LLM; only a count is recorded.
+- OAuth testing mode restricts Gmail access to approved test users.
+- Model output is probabilistic and should be treated as decision support, not a final verdict.
 
 ## Ethical AI Considerations
 
